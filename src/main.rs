@@ -72,35 +72,17 @@ fn main() {
 
         // cd 
         if program == "cd" {
-            let target = if parts.len() > 1 { parts[1] } else { "" };
-
-            if target.starts_with('/') {
-                if let Err(_e) = env::set_current_dir(target) {
-                    println!("cd: {}: No such file or directory", target);
-                }
-            } else {
-                println!("cd: {}: No such file or directory", target);
-            }
-            let target = if parts.len() > 1 { parts[1] } else { "" };
-            
-            if let Err(_e) = env::set_current_dir(target) {
-                println!("cd: {}: No such file or directory", target);
-            }
-
             let target = match parts.get(1) {
-                Some(t) => *t,
+                Some => *t,
                 None => "",
             };
 
             if let Err(_e) = env::set_current_dir(target) {
                 println!("cd: {}: No such file or directory", target);
             }
-
-   
-            }
-
             continue;
         }
+     
 
         /* ================= echo ================= */
         if program == "echo" {
