@@ -1,7 +1,6 @@
 #[allow(unused_imports)]
 use std::io::{self, Write};
 use std::{env, fs};
-use std::path::PathBuf;
 use std::path::{Component, Path, PathBuf};
 use std::process::Command;
 
@@ -43,8 +42,8 @@ fn normalize_path(p: &Path) -> PathBuf {
     let mut out = PathBuf::new();
     for comp in p.components() {
         match comp {
-            Components::CurDir => {}
-            Components::ParentDir => {
+            Component::CurDir => {}
+            Component::ParentDir => {
                 out.pop();
             }
             Component::RootDir | Component::Prefix(_) | Component::Normal(_) => {
