@@ -7,7 +7,6 @@ fn main() {
         io::stdout().flush().unwrap();
 
         let mut command = String::new();
-        // If stdin is closed (EOF), exit the shell.
         if io::stdin().read_line(&mut command).unwrap() == 0 {
             break;
         }
@@ -17,14 +16,16 @@ fn main() {
             continue;
         }
 
+        // tokenize once
+        let parts: Vec<&str> = cmd.split_whitespace().collect();
+
         // exit builtin
-        if cmd == "exit" {
-            break; // or `return;`
+        if parts[0] == "exit" {
+            break;
         }
 
         // echo builtin
-        if cmd.starts_with("echo") {
-            let parts: Vec<&str> = cmd.split_whitespace().collect();
+        if parts[0] == "echo" {
             if parts.len() > 1 {
                 println!("{}", parts[1..].join(" "));
             } else {
@@ -33,6 +34,23 @@ fn main() {
             continue;
         }
 
+        // type builtin
+        if parts[0] == "type" {
+            if parts.len() < 2 {
+                println!("type: not found");
+                continue;
+            }
+
+            let target = parts[1];
+            match target {
+                "echo" | "exit" | "type" => {
+                    println!("{}: not found", target);
+                }
+            }
+            continue;
+        }
+
+        // fallback
         println!("{}: command not found", cmd);
     }
 }
