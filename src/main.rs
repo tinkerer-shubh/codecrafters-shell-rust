@@ -60,6 +60,14 @@ fn main() {
             break;
         }
 
+        // pwd
+        if program == "pwd" {
+            if let Ok(cwd) = env::current_dir() {
+                println!("{}", cwd.display());
+            }
+            continue;
+        }
+
         /* ================= echo ================= */
         if program == "echo" {
             if parts.len() > 1 {
