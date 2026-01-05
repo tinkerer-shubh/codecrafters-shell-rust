@@ -87,7 +87,7 @@ fn main() {
 
             let target = parts[1];
 
-            if matches!(target, "echo" | "exit" | "type") {
+            if matches!(target, "echo" | "exit" | "type" | "pwd") {
                 println!("{} is a shell builtin", target);
                 continue;
             }
