@@ -22,6 +22,17 @@ fn main() {
             break; // or `return;`
         }
 
+        // echo builtin
+        if cmd.starts_with("echo") {
+            let parts: Vec<&str> = cmd.split_whitespace().collect();
+            if parts.len() > 1 {
+                println!("{}", parts[1..].join(" "));
+            } else {
+                println!();
+            }
+            continue;
+        }
+
         println!("{}: command not found", cmd);
     }
 }
