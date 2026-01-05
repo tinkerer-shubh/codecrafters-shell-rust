@@ -44,12 +44,16 @@ fn main() {
             let target = parts[1];
             match target {
                 "echo" | "exit" | "type" => {
-               _ => println!("{}: not found", target);
+                    println!("{} is a shell builtin", target);
+                }
+                _ => {
+                    println!("{} not found", target);
                 }
             }
             continue;
         }
 
+        
         // fallback
         println!("{}: command not found", cmd);
     }
