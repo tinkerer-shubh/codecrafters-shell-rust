@@ -103,7 +103,7 @@ fn main() {
 
             let target = parts[1];
 
-            if matches!(target, "echo" | "exit" | "type" | "pwd" | "cd") {
+            if matches!(target, "echo" | "exit" | "type" | "pwd") {
                 println!("{} is a shell builtin", target);
                 continue;
             }
@@ -114,6 +114,20 @@ fn main() {
                 println!("{}: not found", target);
             }
 
+            continue;
+        }
+
+        //cd
+        if program == "cd" {
+            if parts.len() < 2 {
+                // not req for this stage
+                continue;
+            }
+
+            let target = parts[1];
+            if env::set_current_dir(target).is_err() {
+                println!("cd: {}: No such file or directory", target);
+            }
             continue;
         }
 
