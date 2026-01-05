@@ -44,7 +44,7 @@ fn main() {
             let target = parts[1];
             match target {
                 "echo" | "exit" | "type" => {
-                    println!("{}: not found", target);
+               _ => println!("{}: not found", target);
                 }
             }
             continue;
