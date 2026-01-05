@@ -79,6 +79,11 @@ fn main() {
             } else {
                 println!("cd: {}: No such file or directory", target);
             }
+            let target = if parts.len() > 1 { parts[1] } else { "" };
+            
+            if let Err(_e) = env::set_current_dir(target) {
+                println!("cd: {}: No such file or directory", target);
+            }
 
             continue;
         }
