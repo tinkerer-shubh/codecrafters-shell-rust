@@ -76,10 +76,34 @@ fn main() {
                 continue;
             }
 
-            let target = parts[1];
-            if env::set_current_dir(target).is_err() {
-                println!("cd: {}: No such file or directory", target);
+            let raw_target = parts[1];
+
+            // expanding ~
+            let target = if raw_target == "~" || raw_target.starts_with("~/") {
+                let home = env::var("HOME").or_else(|_| env::var("USERPROFILE"));
+
+                match home {
+                    Ok(home) => {
+                        if raw_target == "~" {
+                            home
+                        } else {
+                            format!("{home}{}", &raw_target[1..])
+                        }
+                    }
+                    Err(_) => {
+                        println!("cd: {}: No such file or directory", raw_target);
+                        continue;
+                    }
+                }
+            } else {
+                raw_target.to_string()
+            };
+
+            if env::set_current_dir(&target).is_err() {
+                println!("cd: {}: No such file or directory", raw_target);
             }
+
+         
             continue;
         }
      
