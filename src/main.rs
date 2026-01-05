@@ -68,6 +68,21 @@ fn main() {
             continue;
         }
 
+        // cd 
+        if program == "cd" {
+            let target = if parts.len() > 1 { parts[1] } else { "" };
+
+            if target.starts_with('/') {
+                if let Err(_e) = env::set_current_dir(target) {
+                    println!("cd: {}: No such file or directory", target);
+                }
+            } else {
+                println!("cd: {}: No such file or directory", target);
+            }
+
+            continue;
+        }
+
         /* ================= echo ================= */
         if program == "echo" {
             if parts.len() > 1 {
@@ -87,7 +102,7 @@ fn main() {
 
             let target = parts[1];
 
-            if matches!(target, "echo" | "exit" | "type" | "pwd") {
+            if matches!(target, "echo" | "exit" | "type" | "pwd" | "cd") {
                 println!("{} is a shell builtin", target);
                 continue;
             }
