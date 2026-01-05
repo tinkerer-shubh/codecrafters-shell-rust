@@ -1,7 +1,7 @@
 #[allow(unused_imports)]
 use std::io::{self, Write};
 use std::{env, fs};
-use std::path::{Component, Path, PathBuf};
+use std::path::PathBuf;
 use std::process::Command;
 
 #[cfg(unix)]
@@ -37,27 +37,7 @@ fn find_executable_in_path(name: &str) -> Option<PathBuf> {
     None
 }
 
-// normalize a path lexically (handles "." and "..") without requiring it to exist.
-fn normalize_path(p: &Path) -> PathBuf {
-    let mut out = PathBuf::new();
-    for comp in p.components() {
-        match comp {
-            Component::CurDir => {}
-            Component::ParentDir => {
-                out.pop();
-            }
-            Component::RootDir | Component::Prefix(_) | Component::Normal(_) => {
-                out.push(comp.as_os_str());
-            }
-        }
-    }
-    if out.as_os_str().is_empty() {
-        PathBuf::from(".")
-    } else {
-        out
-    }
 
-}
 
 fn main() {
     loop {
@@ -107,23 +87,16 @@ fn main() {
                 println!("cd: {}: No such file or directory", target);
             }
 
-            // join all args (defensive; tests won't include spaces, but just to avoid edge cases)
-            let target_str = if parts.len() > 1 { parts[1..].join(" ") } else { String::new() };
-            if target_str.is_empty() {
-                println!("cd: : No such file or directory");
-                continue;
-            }
-
-            let target_path = Path::new(&target_str);
-            let resolved = if target_path.is_absolute() {
-                normalize_path(target_path)
-            } else {
-                let cwd = env::current_dir().unwrap_or_else(|_| PathBuf::from("/"));
-                normalize_path(&cwd.join(target_path))
+            let target = match parts.get(1) {
+                Some(t) => *t,
+                None => "",
             };
 
-            if let Err(_e) = env::set_current_dir(&resolved) {
-                println!("cd: {}: No such file or directory", target_str);
+            if let Err(_e) = env::set_current_dir(target) {
+                println!("cd: {}: No such file or directory", target);
+            }
+
+   
             }
 
             continue;
