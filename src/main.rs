@@ -1,6 +1,7 @@
 #[allow(unused_imports)]
 use std::io::{self, Write};
-use std::{env, fs, path::PathBuff};
+use std::{env, fs};
+use std::path::PathBuf;
 
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
@@ -22,12 +23,12 @@ fn main() {
 
         let parts: Vec<&str> = cmd.split_whitespace().collect();
 
-        // exit
+        /* ================= exit ================= */
         if parts[0] == "exit" {
             break;
         }
 
-        // echo
+        /* ================= echo ================= */
         if parts[0] == "echo" {
             if parts.len() > 1 {
                 println!("{}", parts[1..].join(" "));
@@ -37,7 +38,7 @@ fn main() {
             continue;
         }
 
-        // type
+        /* ================= type ================= */
         if parts[0] == "type" {
             if parts.len() < 2 {
                 println!("type: not found");
@@ -46,12 +47,13 @@ fn main() {
 
             let target = parts[1];
 
-            // builtins 
+            // builtins
             if matches!(target, "echo" | "exit" | "type") {
-                println!("{ is a shell builtin", target);
+                println!("{} is a shell builtin", target);
                 continue;
             }
 
+            // search PATH
             let mut found: Option<PathBuf> = None;
 
             if let Some(path_os) = env::var_os("PATH") {
@@ -79,8 +81,8 @@ fn main() {
                 }
             }
 
-            if let Some(path) == found {
-                println!("{ is {}", target, path.display());
+            if let Some(path) = found {
+                println!("{} is {}", target, path.display());
             } else {
                 println!("{}: not found", target);
             }
@@ -88,7 +90,7 @@ fn main() {
             continue;
         }
 
-        // fallback
+        /* ================= fallback ================= */
         println!("{}: command not found", cmd);
     }
 }
