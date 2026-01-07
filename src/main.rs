@@ -37,41 +37,60 @@ fn find_executable_in_path(name: &str) -> Option<PathBuf> {
     None
 }
 
-fn tokenize_single_quotes(input: &str) -> Vec<String> {
+fn tokenize(input: &str) -> Vec<String> {
     let mut tokens: Vec<String> = Vec::new();
     let mut cur = String::new();
 
-    let mut in_single = false;
+ 
+
+    enum Mode {
+        Normal,
+        Single,
+        Double,
+    }
+
+    let mut mode = Mode::Normal;
 
 let mut started = false;
 
 for ch in input.chars() {
     if in_single {
-        if ch == '\'' {
-            in_single = false;
-            started = true;
-        } else {
-            cur.push(ch);
-            started = true;
-        }
-    } else {
-        match ch {
-            '\'' => {
-                in_single = true;
-                started = true;
-            } 
-            c if c.is_whitespace() => {
-                if started {
-                    tokens.push(std::mem::take(&mut cur));
-                    started = false;
+        match mode {
+            Mode::Single => {
+                if ch == '\'' {
+                    mode = Mode::Normal;
+                    started = true;
+                }   
+            }
+            Mode::Double => {
+                if ch == '"' {
+                    mode = Mode::Normal;
+                    started = true;
                 }
             }
-            _ => {
-                cur.push(ch);
-                started = true;
-            }
+            Mode::Normal => match ch {
+                '\'' => {
+                    mode = Mode::Single;
+                    started = true;
+                }
+                '"' => {
+                    mode = Mode::Double;
+                    started = true;
+                }
+                c if c.is_whitespace() => {
+                    if started {
+                        tokens.push(std::mem::take(&mut cur));
+                        started = false;
+                    }
+                }
+                _ => {
+                    cur.push(ch);
+                    started = true;
+                }
+                
+            },
         }
-    }
+      
 }
 
 if started {
@@ -101,7 +120,7 @@ fn main() {
             }
         }
 
-     let parts = tokenize_single_quotes(cmd);
+     let parts = tokenize_quotes(cmd);
      if parts.is_empty() {
         continue;
      }
