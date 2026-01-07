@@ -37,6 +37,50 @@ fn find_executable_in_path(name: &str) -> Option<PathBuf> {
     None
 }
 
+fn tokenize_single_quotes(input: &str) -> Vec<String> {
+    let mut tokens: Vec<String> = Vec::new();
+    let mut cur = String::new();
+
+    let mut in_single = false;
+
+let mut started = false;
+
+for ch in input.chars() {
+    if in_single {
+        if ch == '\'' {
+            in_single = false;
+            started = true;
+        } else {
+            cur.push(ch);
+            started = true;
+        }
+    } else {
+        match ch {
+            '\'' => {
+                in_single = true;
+                started = true;
+            } 
+            c if c.is_whitespace() => {
+                if started {
+                    tokens.push(std::mem::take(&mut cur));
+                    started = false;
+                }
+            }
+            _ => {
+                cur.push(ch);
+                started = true;
+            }
+        }
+    }
+}
+
+if started {
+    tokens.push(cur);
+}
+
+tokens
+}
+
 
 
 fn main() {
@@ -51,11 +95,18 @@ fn main() {
 
         let cmd = line.trim();
         if cmd.is_empty() {
-            continue;
+            let cmd = line.trim_end_matches(&['\n', '\r'][..]);
+            if cmd.is_empty() {
+                continue;
+            }
         }
 
-        let parts: Vec<&str> = cmd.split_whitespace().collect();
-        let program = parts[0];
+     let parts = tokenize_single_quotes(cmd);
+     if parts.is_empty() {
+        continue;
+     }
+     let program = parts[0].as_str();
+        
 
         /* ================= exit ================= */
         if program == "exit" {
@@ -76,7 +127,7 @@ fn main() {
                 continue;
             }
 
-            let raw_target = parts[1];
+            let raw_target = parts[1].as_str();
 
             // expanding ~
             let target = if raw_target == "~" || raw_target.starts_with("~/") {
@@ -125,7 +176,7 @@ fn main() {
                 continue;
             }
 
-            let target = parts[1];
+            let target = parts[1].as_str();
 
             if matches!(target, "echo" | "exit" | "type" | "pwd" | "cd") {
                 println!("{} is a shell builtin", target);
@@ -152,13 +203,13 @@ fn main() {
             }
 
             if parts.len() > 1 {
-                c.args(&parts[1..]);
+                c.args(&parts[1..].iter());
             }
 
             // Let the program print directly to our stdout/stderr
             let _ = c.status();
         } else {
-            println!("{}: command not found", cmd);
+            println!("{}: command not found", program
         }
     }
 }
