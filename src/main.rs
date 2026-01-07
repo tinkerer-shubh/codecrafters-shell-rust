@@ -41,8 +41,6 @@ fn tokenize(input: &str) -> Vec<String> {
     let mut tokens: Vec<String> = Vec::new();
     let mut cur = String::new();
 
- 
-
     enum Mode {
         Normal,
         Single,
@@ -50,54 +48,52 @@ fn tokenize(input: &str) -> Vec<String> {
     }
 
     let mut mode = Mode::Normal;
-
-let mut started = false;
-
-for ch in input.chars() {
-    if in_single {
+    let mut started = false;
+    
+    for ch in input.chars() {
         match mode {
             Mode::Single => {
                 if ch == '\'' {
                     mode = Mode::Normal;
                     started = true;
-                }   
+                } else {
+                    cur.push(ch);
+                    started = true;
+                }
             }
             Mode::Double => {
                 if ch == '"' {
                     mode = Mode::Normal;
                     started = true;
+                } else {
+                    cur.push(ch);
+                    started = true;
                 }
             }
-            Mode::Normal => match ch {
-                '\'' => {
+            Mode::Normal => {
+                if ch == '\'' {
                     mode = Mode::Single;
                     started = true;
-                }
-                '"' => {
+                } else if ch == '"' {
                     mode = Mode::Double;
                     started = true;
-                }
-                c if c.is_whitespace() => {
+                } else if ch.is_whitespace() {
                     if started {
                         tokens.push(std::mem::take(&mut cur));
                         started = false;
                     }
-                }
-                _ => {
+                } else {
                     cur.push(ch);
                     started = true;
                 }
-                
-            },
+            }
         }
-      
-}
+    }
 
-if started {
-    tokens.push(cur);
-}
-
-tokens
+    if started {
+        tokens.push(cur);
+    }
+    tokens
 }
 
 
@@ -112,15 +108,11 @@ fn main() {
             break; // EOF
         }
 
-        let cmd = line.trim();
-        if cmd.is_empty() {
-            let cmd = line.trim_end_matches(&['\n', '\r'][..]);
-            if cmd.is_empty() {
-                continue;
-            }
-        }
-
-     let parts = tokenize_quotes(cmd);
+       let cmd = line.trim_end_matches(&['\n', '\r'][..]);
+       if cmd.trim().is_empty() {
+        continue;
+       }
+     let parts = tokenize(cmd);
      if parts.is_empty() {
         continue;
      }
