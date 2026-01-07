@@ -41,6 +41,7 @@ fn tokenize(input: &str) -> Vec<String> {
     let mut tokens: Vec<String> = Vec::new();
     let mut cur = String::new();
 
+    #[derive(Clone, Copy, PartialEq, Eq)]
     enum Mode {
         Normal,
         Single,
@@ -50,7 +51,9 @@ fn tokenize(input: &str) -> Vec<String> {
     let mut mode = Mode::Normal;
     let mut started = false;
     
-    for ch in input.chars() {
+  
+        let mut it = input.chars();
+        while let Some(ch) = it.next() { 
         match mode {
             Mode::Single => {
                 if ch == '\'' {
@@ -71,7 +74,14 @@ fn tokenize(input: &str) -> Vec<String> {
                 }
             }
             Mode::Normal => {
-                if ch == '\'' {
+                if ch == '\\' {
+                    if let Some(next) = it.next() {
+                        cur.push(next);
+                    } else {
+                        cur.push('\\');
+                    }
+                    started = true;
+                } else if ch == '\'' { 
                     mode = Mode::Single;
                     started = true;
                 } else if ch == '"' {
