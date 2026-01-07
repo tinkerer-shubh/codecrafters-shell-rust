@@ -209,7 +209,7 @@ fn main() {
             // Let the program print directly to our stdout/stderr
             let _ = c.status();
         } else {
-            println!("{}: command not found", program
+            println!("{}: command not found", program);
         }
     }
 }
