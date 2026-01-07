@@ -203,7 +203,7 @@ fn main() {
             }
 
             if parts.len() > 1 {
-                c.args(&parts[1..].iter());
+                c.args(parts[1..].iter());
             }
 
             // Let the program print directly to our stdout/stderr
