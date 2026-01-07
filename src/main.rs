@@ -68,11 +68,29 @@ fn tokenize(input: &str) -> Vec<String> {
                 if ch == '"' {
                     mode = Mode::Normal;
                     started = true;
+                } else if ch == '\\' {
+                    if let Some(next) = it.next() {
+                        match next {
+                            '"' | '\\' => {
+                                // \" -> "
+                                // \\ -> \ 
+                                cur.push(next);
+                            }
+                            _ => {
+                                cur.push('\\');
+                                cur.push(next);
+                            }
+                        }
+                    } else {
+                        cur.push('\\');
+                    } 
+                    started = true;
                 } else {
                     cur.push(ch);
                     started = true;
                 }
             }
+
             Mode::Normal => {
                 if ch == '\\' {
                     if let Some(next) = it.next() {
