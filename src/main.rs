@@ -2,7 +2,8 @@
 use std::io::{self, Write};
 use std::{env, fs};
 use std::path::PathBuf;
-use std::process::Command;
+use std::process::{Command, Stdio};
+
 
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
@@ -105,6 +106,20 @@ fn tokenize(input: &str) -> Vec<String> {
                 } else if ch == '"' {
                     mode = Mode::Double;
                     started = true;
+                } else if ch == '>' {
+                    // redirection operator
+                    if started {
+                        if cur == "1" {
+                            tokens.push("1>".to_string());
+                            cur.clear();
+                            started = false;
+                            continue;
+                        } else {
+                            tokens.push(std::mem::take(&mut cur));
+                            started = false;
+                        }
+                    }
+                    tokens.push(">".to_string());
                 } else if ch.is_whitespace() {
                     if started {
                         tokens.push(std::mem::take(&mut cur));
@@ -124,7 +139,55 @@ fn tokenize(input: &str) -> Vec<String> {
     tokens
 }
 
+fn split_stdout_redirection(tokens: &[String]) -> (Vec<String>, Option<String>) {
+    let mut argv: Vec<String> = Vec::new();
+    let mut redirect: Option<String> = None;
 
+    let mut i = 0usize;
+    while i < tokens.len() {
+        let t = tokens[i].as_str();
+
+        if t == ">" || t == "1>" {
+            if i + 1 < tokens.len() {
+                redirect = Some(tokens[i + 1].clone());
+                i += 2;
+                continue;
+            } else {
+                argv.push(tokens[i].clone());
+                i += 1;
+                continue;
+            }
+        }
+
+        if t == "1" && i + 1 < tokens.len() && tokens[i + 1] == ">" {
+            if i + 2 < tokens.len() {
+                redirect = Some(tokens[i + 2].clone());
+                i += 3;
+                continue;
+            } else {
+                argv.push(tokens[i].clone());
+                argv.push(tokens[i + 1].clone());
+                i += 2;
+                continue;
+            }
+        }
+
+        
+
+        argv.push(tokens[i].clone());
+        i += 1;
+    }
+
+    (argv, redirect)
+}
+
+fn write_line(out_file: Option<&mut fs::File>, line: &str) {
+    if let Some(f) = out_file {
+        let _ = writeln!(f, "{}", line);
+    } else {
+        println!("{}", line);
+    }
+}
 
 fn main() {
     loop {
@@ -140,11 +203,31 @@ fn main() {
        if cmd.trim().is_empty() {
         continue;
        }
-     let parts = tokenize(cmd);
-     if parts.is_empty() {
+       let parts = tokenize(cmd);
+       if parts.is_empty() {
         continue;
      }
-     let program = parts[0].as_str();
+
+     let (argv, stdout_redirect) = split_stdout_redirection(&parts);
+     if argv.is_empty() {
+        continue;
+     }
+
+     let program = argv[0].as_str();
+
+     let mut out_file: Option<fs::File> = match stdout_redirect.as_deref() {
+        Some(path) => match fs::File::create(path) {
+            Ok(f) => Some(f),
+            Err(e) => {
+                // keep error on terminal
+                println!("{}: {}", path, e);
+                None
+            }
+        },
+        None => None,
+    
+    };
+
         
 
         /* ================= exit ================= */
@@ -155,18 +238,18 @@ fn main() {
         // pwd
         if program == "pwd" {
             if let Ok(cwd) = env::current_dir() {
-                println!("{}", cwd.display());
+               write_line(out_file.as_mut(), &format!("{}", cwd.display()));
             }
             continue;
         }
 
         // cd 
         if program == "cd" {
-            if parts.len() < 2 {
+            if argv.len() < 2 {
                 continue;
             }
 
-            let raw_target = parts[1].as_str();
+            let raw_target = argv[1].as_str();
 
             // expanding ~
             let target = if raw_target == "~" || raw_target.starts_with("~/") {
@@ -200,32 +283,32 @@ fn main() {
 
         /* ================= echo ================= */
         if program == "echo" {
-            if parts.len() > 1 {
-                println!("{}", parts[1..].join(" "));
+            if argv.len() > 1 {
+                write_line(out_file.as_mut(), &argv[1..].join(" "));
             } else {
-                println!();
+                write_line(out_file.as_mut(), "");
             }
             continue;
         }
 
         /* ================= type ================= */
         if program == "type" {
-            if parts.len() < 2 {
-                println!("type: not found");
+            if argv.len() < 2 {
+                write_line(out_file.as_mut(), "type: not found");
                 continue;
             }
 
-            let target = parts[1].as_str();
+            let target = argv[1].as_str();
 
             if matches!(target, "echo" | "exit" | "type" | "pwd" | "cd") {
-                println!("{} is a shell builtin", target);
+                write_line(out_file.as_mut(), &format!("{} is a shell builtin", target));
                 continue;
             }
 
             if let Some(path) = find_executable_in_path(target) {
-                println!("{} is {}", target, path.display());
+               write_line(out_file.as_mut(), &format!("{} is {}", target, path.display()));
             } else {
-                println!("{}: not found", target);
+               write_line(out_file.as_mut(), &format!("{}: not found", target));
             }
 
             continue;
@@ -241,8 +324,13 @@ fn main() {
                 c.arg0(program);
             }
 
-            if parts.len() > 1 {
-                c.args(parts[1..].iter());
+            if argv.len() > 1 {
+                c.args(argv[1..].iter());
+            }
+
+            // redirect only stdout when requested (stderr stays on terminal)
+            if let Some(file) = out_file.take() {
+                c.stdout(Stdio::from(file));
             }
 
             // Let the program print directly to our stdout/stderr
@@ -252,3 +340,4 @@ fn main() {
         }
     }
 }
+
